@@ -1,0 +1,46 @@
+# ─────────────────────────────────────────────
+# _config.yml — GitHub Pages · Cronos HGP B2B
+# ─────────────────────────────────────────────
+
+# Tema visual
+theme: jekyll-theme-cayman
+# Alternativas disponibles sin plugins adicionales:
+#   jekyll-theme-slate       → fondo oscuro, ideal para docs técnicas
+#   jekyll-theme-minimal     → minimalista, tipografía limpia
+#   jekyll-theme-dinky       → sidebar con navegación
+#   jekyll-theme-hacker      → terminal-style, fondo negro
+
+# Metadatos del sitio
+title: "Cronos HGP B2B"
+description: "Documentación técnica · Versión Desconectada v3 · Java 21 · Angular · MySQL 8"
+
+# URL del sitio
+url: "https://flaviofonck.github.io"
+baseurl: "/b2b_qcs"
+
+# Autor
+author:
+  name: "Equipo QCS"
+
+# Opciones de Jekyll
+markdown: kramdown
+highlighter: rouge
+kramdown:
+  input: GFM
+  syntax_highlighter: rouge
+
+# Plugins permitidos por GitHub Pages
+plugins:
+  - jekyll-relative-links
+  - jekyll-optional-front-matter
+  - jekyll-readme-index
+
+# Archivos y carpetas que Jekyll NO debe procesar
+exclude:
+  - "*.bat"
+  - "*.ps1"
+  - "scripts/"
+  - "node_modules/"
+  - "Gemfile"
+  - "Gemfile.lock"
+  - ".github/"
