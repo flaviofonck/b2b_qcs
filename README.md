@@ -1,233 +1,394 @@
-# Entrega Fase 1 — Cronos HGP B2B (Versión Desconectada v3)
+# Guía de Pruebas — Fase 1
+## Sistema Cronos HGP B2B · Versión Desconectada v3
+### Sprints 1, 2 y 3 — 8 Historias de Usuario
 
-**Proyecto:** HGP B2B · On Premise · Stack Java 21 · Angular · MySQL 8  
-**Referencia de planificación:** [Sprint 1 en `HU/03_Plan_Scrum_Sprints_Desconectado_v3.md`](../HU/03_Plan_Scrum_Sprints_Desconectado_v3.md)  
-**Fecha de referencia documental:** 2026-04-04  
-
-Este documento consolida la **documentación de la primera entrega (Fase 1 = Sprint 1)**: alcance acordado, enlaces a historias de usuario y plan Scrum, resumen de implementación en código, y una **guía de prueba muy detallada** para que el usuario final valide en la aplicación todo lo entregado, sin ambigüedades sobre rutas, roles y criterios de éxito.
-
----
-
-## 1. Qué se entrega en Fase 1
-
-### 1.1 Definición según plan Scrum
-
-En el [plan de sprints](../HU/03_Plan_Scrum_Sprints_Desconectado_v3.md), **Sprint 1 (Semana 1)** tiene como foco:
-
-- **Setup técnico:** repositorio, entorno de desarrollo, base de datos (Flyway), pipeline de CI básico, Docker Compose MySQL (según documentación del repo).
-- **HU-03:** tarea **Gestión OBYC** — creación automática desde importación Excel **F1 Ganada + Liberada**, con modelo renombrado respecto a la antigua “Solicitud Grupo Artículo”, asignación a **Contabilidad**, e **hijos por proveedor** cuando el Excel aporta varios proveedores.
-- **HU-05:** tarea **Kick Off Entrega** — creación automática desde el mismo Excel, asignación según **complejidad** (regla documentada en la HU), con propagación de campos desde la fila Excel.
-
-**Criterios de Done del Sprint 1** (resumen del plan):
-
-- Ambiente DEV operativo para el equipo.
-- HU-03: la tarea aparece como **Gestión OBYC** y se crea de forma automática al procesar el Excel; comportamiento **idempotente** (no duplicar por oportunidad / tipo).
-- HU-05: la tarea aparece como **Kick Off Entrega** y se crea automáticamente con el mismo disparador.
-- Pruebas unitarias pasando en CI.
-
-### 1.2 Historias de usuario enlazadas (lectura normativa)
-
-| HU | Documento en repositorio |
-|----|---------------------------|
-| **HU-03** | [`HU/HU-03_Gestión_OBYC_Reclasificación.md`](../HU/HU-03_Gestión_OBYC_Reclasificación.md) |
-| **HU-05** | [`HU/HU-05_Kick_Off_Entrega.md`](../HU/HU-05_Kick_Off_Entrega.md) |
-
-Contexto global del producto (13 HUs, stack, módulos): [`.github/copilot-instructions.md`](../.github/copilot-instructions.md).
-
-### 1.3 Documentación técnica de remediación / auditoría Sprint 1 (opcional)
-
-Si necesita trazabilidad de brechas detectadas post-auditoría y tareas de cierre:
-
-- [`docs/files/specs/sem1-sprint-audit/requirements.md`](files/specs/sem1-sprint-audit/requirements.md)
-- [`docs/files/specs/sem1-sprint-audit/design.md`](files/specs/sem1-sprint-audit/design.md)
-- [`docs/files/specs/sem1-sprint-audit/tasks.md`](files/specs/sem1-sprint-audit/tasks.md)
+**Fecha:** 06/04/2026  
+**Preparado por:** Equipo de Desarrollo QCS  
+**Versión documento:** 1.0  
 
 ---
 
-## 2. Qué quedó implementado (resumen técnico sin ambigüedad)
-
-Esta sección alinea **lo que el usuario verá** con **lo que hace el backend** para que no queden dudas de implementación.
-
-### 2.1 Disparador único: Excel F1 Ganada **y** Liberada
-
-- La importación se realiza desde la pantalla **Workflow** (bloque de importación) o vía API `POST` multipart al endpoint documentado en el manual (`/api/excel/f1-ganada`, campo `file`).
-- El lector [`F1GanadaExcelReader`](../src/main/java/com/hgp/b2b/excel/F1GanadaExcelReader.java) **solo procesa filas cuyo estado (columna **E**) cumple simultáneamente:**
-  - contiene indicación de **F1** y **GANAD** (ganada); y  
-  - contiene **LIBERAD** (liberada).  
-- Ejemplos válidos de texto en columna E: `F1 Ganada Liberada`, `F1_GANADA_LIBERADA`, `F1 GANADA + LIBERADA` (la lógica normaliza espacios y mayúsculas).
-
-### 2.2 Formato del Excel (primera hoja, fila 1 = encabezados)
-
-El mapeo columnas → negocio está documentado en el propio lector. Referencia rápida:
-
-| Columna | Letra | Uso relevante Fase 1 |
-|---------|------|------------------------|
-| Número oportunidad | A | Clave de oportunidad |
-| Estado | E | **Trigger** F1 Ganada + Liberada |
-| Complejidad | F | **HU-05** asignación Kick Off |
-| Tipo compra | G | Oportunidad (PUNTUAL / GENERAL) |
-| … | … | Resto de campos según DTO |
-| Proveedor(s) | AF | **HU-03:** puede listar **varios proveedores** separados por `;` **o** `|` **o** `,`; el motor crea **un hijo OBYC por cada proveedor** (además del padre) |
-
-Texto orientativo para generar datos de prueba: [`scripts/sample-data/LEEME_F1_Ganada_Demo.txt`](../scripts/sample-data/LEEME_F1_Ganada_Demo.txt) y script Python [`scripts/generate_f1_ganada_demo_excel.py`](../scripts/generate_f1_ganada_demo_excel.py).
-
-### 2.3 Motor de reglas: tipos de tarea (`validation_id`)
-
-En [`TaskRulesEngine`](../src/main/java/com/hgp/b2b/rules/TaskRulesEngine.java) consta:
-
-| validation_id | Tarea | Fase 1 |
-|---------------|--------|--------|
-| **6** | Gestión OBYC **padre** | HU-03 — asignación a rol **CONTABILIDAD** |
-| **9** | Gestión OBYC **hijo** (por proveedor) | HU-03 — mismo rol **CONTABILIDAD**, vinculado al padre |
-| **7** | Kick Off Entrega | HU-05 — asignación según complejidad (ver §2.4) |
-
-**Idempotencia:** no se duplican tareas del mismo tipo para la misma oportunidad (y los hijos OBYC por proveedor no se duplican si ya existe ese proveedor normalizado).
-
-### 2.4 HU-05 — Regla de asignación Kick Off (código actual)
-
-En implementación, `rolParaKickOff` hace:
-
-- Si **Complejidad** (columna F) es **`BAJA`** (ignorando mayúsculas) → asignación a rol **PM**.
-- Cualquier otra complejidad → rol **CONTROL_GESTION** (en el código se documenta como proxy de **Planificación** frente a la tabla de la HU-05; valide con negocio si el catálogo de roles debe mostrar otro nombre en pantalla).
-
-Si **no hay ningún usuario activo** con el rol destino, la tarea puede quedar **sin asignado** y el sistema registra advertencia en log — en pruebas, debe existir al menos un usuario por rol necesario.
-
-### 2.5 HU-03 — Padre + hijos por proveedor
-
-- Siempre se intenta crear la tarea **padre** Gestión OBYC (vid 6).
-- A partir de la celda de **proveedor(es)** (AF), se segmenta la lista; por cada proveedor distinto se crea un **hijo** (vid 9) si aún no existía para esa oportunidad y proveedor.
-- Si la celda de proveedor viene vacía, puede existir solo el **padre** sin hijos (según datos de la fila).
-
-### 2.6 Nota importante: misma importación crea también Presupuesto (alcance posterior)
-
-El mismo método `procesarF1GanadaRow` crea, cuando corresponde, la tarea **Presupuesto** (**HU-17**, Sprint 3 en el plan de producto). **No forma parte del alcance funcional de “solo Sprint 1” en el plan Scrum**, pero **sí puede aparecer en la aplicación** tras importar, porque comparte el disparador Excel. Para una demo estrictamente “Sprint 1”, puede ignorarse la verificación de Presupuesto o documentarse como dependencia técnica compartida.
-
-### 2.7 Workflow
-
-Tras procesar filas, el motor refresca etapas de workflow para la oportunidad (`workflowService.inicializarSiAusente` / `refrescarEtapasDesdeTareas`). La **visualización completa** del tablero por etapas es objeto de **fases posteriores** (HU-20, HU-21, HU-22); en Fase 1 lo verificable es que existan las tareas y rutas de compras.
+> **Acceso al sistema**  
+> - **Frontend:** http://localhost:4201  
+> - **Usuario de prueba:** admin / Admin2024 *(o el que corresponda al entorno)*  
+> - **Backend API:** http://localhost:8081  
+> - **Prerequisito:** El backend debe estar corriendo (`iniciar-backend.bat`) y la BD MySQL 8 activa (`docker compose up -d`).
 
 ---
 
-## 3. Infraestructura y entorno para probar (SETUP)
+## Sprint 1 — Setup técnico + HU-03 + HU-05
 
-### 3.1 Base de datos
+### HU-03 — Gestión OBYC (Tarea padre automática)
 
-- MySQL 8, base `hgp_b2b`, puerto típico `3306`.
-- En desarrollo puede usarse `docker-compose` en la raíz del backend (según [copilot-instructions](../.github/copilot-instructions.md)).
-- Import inicial: script `scripts/db-import.ps1` (Windows) según instrucciones del proyecto.
+**Descripción:** Al cargar el archivo Excel F1 Ganada + Liberada, el sistema debe crear automáticamente la **Tarea Gestión OBYC** (una tarea padre) y tantas **tareas hijas** como proveedores tenga la oportunidad. La bandeja de entrada es del rol **Contabilidad**.
 
-### 3.2 Backend y frontend (puertos en scripts del repo)
+#### Pasos de prueba
 
-Los scripts batch del repositorio usan por defecto:
+1. Ingresar al sistema con usuario de rol **PM**, **ADMIN** o **CONTROL_GESTION**.
+2. Ir a la sección **"Importar Excel F1 Ganada"** (menú lateral o módulo Compras).
+3. Seleccionar un archivo Excel F1 Ganada que contenga al menos **una oportunidad** con estado "Ganada + Liberada" y que tenga proveedores en la columna correspondiente.
+4. Hacer clic en **"Procesar"** o **"Importar"**.
 
-- **Backend:** `http://localhost:8081` (véase [`iniciar-backend.bat`](../iniciar-backend.bat)).
-- **Frontend:** `http://localhost:4201` (véase [`iniciar-frontend.bat`](../iniciar-frontend.bat)).
+#### Resultado esperado
 
-El frontend apunta al API en [`hgp-b2b-frontend/src/environments/environment.ts`](../hgp-b2b-frontend/src/environments/environment.ts): `apiUrl: 'http://localhost:8081/api'`.
+- ✅ El sistema muestra un resumen con el número de filas procesadas y tareas creadas.
+- ✅ En la bandeja **Contabilidad**, aparece la tarea **"Gestión OBYC"** para la oportunidad procesada.
+- ✅ Si la oportunidad tiene varios proveedores (separados por `;` o `|`), aparecen **tareas hijas** (una por cada proveedor), vinculadas a la tarea padre.
+- ✅ Si se vuelve a importar el mismo Excel, **no se duplican** las tareas (idempotencia).
 
-Si su documentación genérica menciona `:8080` o `:4200`, para esta entrega **siga los puertos anteriores** salvo que haya cambiado `environment` o configuración local.
-
-### 3.3 CI
-
-- Workflow Maven: [`.github/workflows/maven.yml`](../.github/workflows/maven.yml) (ejecución de tests en JDK 21).
-
----
-
-## 4. Guía de prueba para el usuario final (paso a paso)
-
-### 4.1 Preparación
-
-1. Arranque MySQL y cargue datos base (usuarios por rol **CONTABILIDAD**, **PM**, **CONTROL_GESTION**, y un usuario con permiso de **importación Excel**: típicamente **PM**, **CONTROL_GESTION**, **SOPORTE** o **ADMIN**, según mensaje en pantalla).
-2. Arranque el backend y espere a que la API responda.
-3. Arranque el frontend y abra la URL correcta (`http://localhost:4201` con los scripts actuales).
-4. Inicie sesión con un usuario **autorizado para importar** (si la importación falla con “No tiene permiso…”, use otro usuario con rol indicado en el mensaje).
-
-### 4.2 Prueba A — Importación correcta y aparición de tareas HU-03 / HU-05
-
-1. Obtenga o genere un archivo **`.xlsx`** compatible (ver §2.2 y `LEEME_F1_Ganada_Demo.txt`).
-2. Confirme que al menos una fila de datos tenga en columna **E** un texto que dispare el trigger (p. ej. `F1 Ganada Liberada`).
-3. Menú lateral → **Workflow** (`/workflow`).
-4. Localice el bloque **Importar F1 Ganada + Liberada** (o equivalente).
-5. Pulse **Elegir archivo Excel**, seleccione el `.xlsx` y confirme la carga.
-6. Espere el mensaje de **éxito** o el detalle de error (si hay error, corrija el archivo o permisos y repita).
-
-**Qué debe comprobar:**
-
-- En **Compras** (`/compras`), en el listado de tareas abiertas, aparecen filas cuyo **tipo** corresponde a **Gestión OBYC** (padre y, si aplica, hijos por proveedor) y **Kick Off Entrega**.
-- Anote el **ID de tarea** y el **número de oportunidad** para las pruebas B y C.
-
-### 4.3 Prueba B — HU-03 Gestión OBYC (navegación y bandeja Contabilidad)
-
-1. Cierre sesión e inicie sesión con un usuario de rol **Contabilidad** (según datos semilla de su BD).
-2. Vaya a **Compras** y abra una tarea **Gestión OBYC** con **Abrir tarea** (o la acción equivalente).
-3. La ruta esperada de detalle es del estilo: `/compras/gestion-obyc/{id}`.
-
-**Criterios de éxito HU-03 en esta fase:**
-
-- La tarea existe **sin creación manual** previa (solo por importación).
-- Si el Excel tenía **varios proveedores** en columna AF, existen **varias** tareas hijas OBYC (además del padre), diferenciables por proveedor en listado o detalle según la UI.
-- La tarea está asignada al flujo de **Contabilidad** cuando hay usuario disponible para ese rol.
-
-> **Nota:** La pantalla completa de **PxQ manual y tabla contable** (relleno de complemento GA, cuenta contable, cierre) corresponde a **HU-04 (Sprint 2)**. En Fase 1 la prueba objetivo es **existencia, creación automática, asignación e idempotencia**, no el cierre contable avanzado.
-
-### 4.4 Prueba C — HU-05 Kick Off Entrega (asignación por complejidad)
-
-1. Prepare **dos filas** en Excel (u oportunidades distintas) con el mismo trigger en columna E:
-   - Fila 1: **Complejidad** = `BAJA` → según código, Kick Off debe asignarse a un usuario **PM** (si existe usuario activo PM).
-   - Fila 2: **Complejidad** = `MEDIA` (o ALTA / ESPECIAL) → Kick Off debe asignarse a **CONTROL_GESTION** (Planificación en negocio).
-2. Importe el archivo.
-3. Inicie sesión como **PM** y verifique que ve la tarea Kick Off de la oportunidad de complejidad **BAJA** (si la asignación está hecha a rol PM).
-4. Inicie sesión como usuario **CONTROL_GESTION** y verifique la tarea de la oportunidad de complejidad no baja.
-
-**Ruta de detalle:** `/compras/kick-off-entrega/{id}`.
-
-**Criterios de éxito HU-05:**
-
-- Tarea creada automáticamente; nombre/tipo coherente con **Kick Off Entrega**.
-- Campos de cabecera que provengan del Excel (proveedor, contrato, valores, etc.) visibles cuando el DTO los trajo — si un campo no venía en Excel, puede mostrarse vacío según HU-05.
-
-### 4.5 Prueba D — Idempotencia (no duplicar al reimportar)
-
-1. Vuelva a importar **el mismo archivo** sin cambiar números de oportunidad.
-2. **No** deben crearse tareas duplicadas del mismo tipo para la misma oportunidad (ni hijos OBYC duplicados para el mismo proveedor).
-
-### 4.6 Prueba E — API directa (opcional, equipo técnico)
-
-`POST /api/excel/f1-ganada` con `multipart/form-data`, campo `file` = Excel. Debe producir el mismo efecto que la UI. Útil para automatización o diagnóstico.
+#### Verificación adicional (segundo clic)
+1. Importar **el mismo archivo Excel** por segunda vez.
+2. Verificar que el número de tareas en Contabilidad **no aumentó** (idempotencia confirmada).
 
 ---
 
-## 5. Matriz rápida: HU Fase 1 ↔ dónde probarlo
+### HU-05 — Kick Off Entrega (Tarea automática)
 
-| Entregable | HU | Pantalla / ruta principal | Rol típico |
-|------------|-----|-----------------------------|------------|
-| Gestión OBYC automática + hijos por proveedor | HU-03 | Workflow (import) → Compras → `/compras/gestion-obyc/{id}` | Contabilidad |
-| Kick Off Entrega automático + asignación por complejidad | HU-05 | Workflow (import) → Compras → `/compras/kick-off-entrega/{id}` | PM o Control de Gestión / Planificación |
-| Excel F1 Ganada + Liberada | HU-03 + HU-05 | `/workflow` — importación | PM, Control de Gestión, Soporte o Admin |
+**Descripción:** Al procesar el Excel F1 Ganada, también se crea la **Tarea Kick Off Entrega**. Su asignación varía según la complejidad de la oportunidad.
 
----
+#### Pasos de prueba
 
-## 6. Qué **no** se exige validar como “solo Fase 1”
+1. Procesar el mismo Excel F1 Ganada (o uno nuevo).
+2. Observar la tarea **"Kick Off Entrega"** creada para la oportunidad.
 
-Para no mezclar alcances:
+#### Resultado esperado
 
-- **HU-04** (PxQ manual, tabla contable completa, cierre OBYC avanzado) — Sprint 2.
-- **HU-09, HU-01** (Gestión Cesta y campos extendidos) — Sprint 2.
-- **HU-08, HU-10, HU-17** (FOD, Derivada, Presupuesto funcional completo) — Sprint 3 en el plan (aunque el trigger de Presupuesto pueda ya crear la tarea al importar).
-- **HU-16, HU-20, HU-21, HU-22, HU-24** — Sprints 4–5.
-
-El [manual de usuario general](manual-usuario.md) cubre el flujo completo v3; use este documento **solo** para acotar la **primera entrega**.
+- ✅ Aparece la tarea **"Kick Off Entrega"** en el sistema.
+- ✅ Si la complejidad de la oportunidad es **BAJA** → asignada al rol **PM**.
+- ✅ Si la complejidad es **MEDIA, ALTA o Proyectos Especiales** → asignada al rol **PLANIFICACIÓN**.
+- ✅ El campo **Proveedor** en la tarea corresponde al proveedor indicado en el Excel (columna AF).
+- ✅ Re-importar el Excel **no crea una segunda** tarea Kick Off para la misma oportunidad.
 
 ---
 
-## 7. Documentación relacionada
+## Sprint 2 — HU-01 + HU-04 + HU-09
 
-| Documento | Uso |
-|-----------|-----|
-| [Manual de usuario (v3 completo)](manual-usuario.md) | Navegación y módulos finales |
-| [Despliegue on premise](despliegue-on-premise.md) | Instalación en entorno productivo |
-| [`.github/copilot-instructions.md`](../.github/copilot-instructions.md) | Stack, rutas backend, roadmap |
+### HU-01 — Campos de Compra en Gestión Cesta
+
+**Descripción:** Las tareas de **Gestión Cesta** deben mostrar y permitir editar los campos especiales de compra: **Ámbito de Compra**, **Tipo de Compra**, **PEP**, **Número de Derivada/Cesta** y **Valor Total de Compra**.
+
+#### Pasos de prueba
+
+1. Ir al módulo **Gestión Cesta** (o buscar la tarea correspondiente via bandeja).
+2. Abrir el detalle de una tarea de tipo **Gestión Cesta**.
+
+#### Resultado esperado
+
+- ✅ El formulario muestra los campos: **Ámbito de Compra**, **Tipo de Compra** (PUNTUAL/GENERAL), **PEP**, **Número de Derivada/Cesta**, **Valor Total de Compra**.
+- ✅ Los campos vienen **pre-cargados** con los valores propagados desde la oportunidad y el Excel.
+- ✅ Se pueden editar y guardar (botón "Actualizar" o similar).
+- ✅ Los campos actualizados se reflejan en el DTO de la tarea (verificable vía API o recargando la página).
 
 ---
 
-*Documento generado para la entrega de Fase 1 (Sprint 1). Ajuste fechas y notas de waiver si su comité de proyecto acordó excepciones formales sobre alcance.*
+### HU-04 — Gestión OBYC: PxQ manual y tabla contable
+
+**Descripción:** El formulario de **Gestión OBYC** debe permitir gestionar las líneas PxQ (Precio por Cantidad) de forma manual, con dos columnas editables por Contabilidad: **Complemento GA** y **Cuenta Contable**. Al ingresar la cuenta contable, el sistema auto-completa el **Área Funcional**.
+
+#### Pasos de prueba
+
+1. Abrir una tarea **Gestión OBYC** (en la bandeja de Contabilidad o buscándola por oportunidad).
+2. Ir a la pestaña/sección **"PxQ"** o **"Contabilidad"**.
+3. Editar una línea PxQ:
+   - Ingresar un valor en **"Complemento GA"**.
+   - Ingresar un valor válido en **"Cuenta Contable"** (debe estar en la paramétrica del sistema).
+4. Guardar los cambios.
+
+#### Resultado esperado
+
+- ✅ Las columnas **Complemento GA** y **Cuenta Contable** son editables.
+- ✅ Al guardar la **Cuenta Contable** válida, el campo **Área Funcional** se auto-completa con el valor correspondiente de la paramétrica.
+- ✅ Si la cuenta contable no existe en la paramétrica, el sistema muestra un **mensaje de error** indicando que la cuenta no es válida.
+- ✅ Los cambios persisten al recargar la página.
+
+#### Prueba de cierre
+Completar los datos PxQ y verificar que al intentar cerrar la tarea OBYC, el sistema lo permite solo si se cumplen las precondicoines necesarias (ver HU-09 más abajo para el cierre encadenado).
+
+---
+
+### HU-09 — Gestión de Cesta Automática
+
+**Descripción:** La tarea **Gestión de Cesta** se crea **automáticamente** al cerrar las dos tareas previas: **Gestión OBYC** y **Presupuesto**, pero **solo para compras tipo PUNTUAL**.
+
+> **Prerequisito de datos:** Tener una oportunidad de tipo **PUNTUAL** con sus tres tareas iniciales creadas (OBYC, Kick Off, Presupuesto). Se pueden usar las oportunidades `OPP-CESTA-2026-00101` a `OPP-CESTA-2026-00115` del Excel de demo o cualquier otra PUNTUAL importada.
+
+#### Paso 1 — Cerrar la tarea Gestión OBYC (rol: Contabilidad)
+
+1. Ir al menú **Compras** (http://localhost:4201/compras).
+2. En el selector **"Tipo de Tarea"**, elegir **"Gestión OBYC"**.
+3. Localizar la tarea de la oportunidad PUNTUAL deseada y hacer clic en **"Abrir tarea"**.
+   - La URL será `/compras/gestion-obyc/{id}`.
+4. *(Opcional)* Editar una línea PxQ: columna **Complemento GA** y/o **Cuenta Contable**.
+5. Hacer clic en el botón **"Cerrar Tarea OBYC"** (parte inferior del formulario).
+6. Confirmar la acción en el diálogo de confirmación.
+
+#### Paso 2 — Cerrar la tarea Presupuesto (rol: Control de Gestión)
+
+1. Volver a **Presupuesto** (http://localhost:4201/presupuesto) **o** a **Compras** y filtrar por **"Presupuesto"**.
+2. Localizar la tarea Presupuesto de la **misma oportunidad** y hacer clic en **"Abrir tarea"**.
+   - La URL será `/presupuesto/{id}`.
+3. *(Opcional)* Añadir al menos una línea OPEX o CAPEX con el botón **"Añadir OPEX"** / **"Añadir CAPEX"** y guardarla.
+4. Hacer clic en el botón **"Cerrar tarea Presupuesto"** (parte inferior).
+5. En este momento el backend crea automáticamente la **Tarea Gestión Cesta**.
+
+#### Resultado esperado
+
+- ✅ Al cerrar la tarea Presupuesto, el sistema **crea automáticamente** la tarea **"Gestión Cesta"**.
+- ✅ La tarea Gestión Cesta aparece en **Compras** (filtro "Gestión Cesta") asignada al rol **VENDOR**.
+- ✅ Los campos de la Gestión Cesta vienen **pre-cargados** con los datos de la oportunidad, el Kick Off y el OBYC (~20 campos: PEP, Proveedor, Valor Cesta COP/USD, RFX, Complemento GA, Cuenta Contable, Área Funcional, etc.).
+- ✅ Si OBYC ya estaba cerrada y se cierra Presupuesto (o viceversa), la Gestión Cesta se crea al cerrarse la **segunda** de las dos.
+- ✅ Si la oportunidad es de tipo **GENERAL**, la tarea Gestión Cesta **NO se crea** (este flujo es exclusivo de PUNTUAL).
+
+#### Paso 3 — Verificar y cerrar Gestión Cesta (rol: Vendor)
+
+1. Ir a **Compras** y filtrar por **"Gestión Cesta"**.
+2. Abrir la tarea recién creada: clic en **"Abrir tarea"** (URL `/compras/gestion-cesta/{id}`).
+3. Verificar que los campos vienen pre-cargados (Ámbito de Compra, Tipo de Compra, PEP, Valor Total de Compra).
+4. Intentar cerrar la tarea **sin ingresar** el campo **"Número de Cesta"** → el sistema debe bloquear el cierre con un mensaje de error.
+5. Ingresar el **Número de Cesta** (ej. `CESTA-TEST-001`) y hacer clic en **"Cerrar Tarea"**.
+
+#### Resultado esperado
+
+- ✅ Sin Número de Cesta → error **"El campo 'Número de cesta' es obligatorio para cerrar..."**
+- ✅ Con Número de Cesta → cierre exitoso, estado cambia a **CERRADA**.
+
+---
+
+## Sprint 3 — HU-08 + HU-10 + HU-17
+
+### HU-08 — Formulario FOD
+
+**Descripción:** Cada **Tarea Kick Off Entrega** tiene asociado un **Formulario FOD** (Formulario de Orden de Despacho) con 21 campos. El FOD es un documento formal que debe completarse y puede imprimirse como PDF.
+
+#### Pasos de prueba
+
+1. Abrir una **Tarea Kick Off Entrega** (creada desde el Excel en Sprint 1).
+2. Ir a la sección/pestaña **"FOD"** o hacer clic en el botón **"Ver FOD"** / **"Completar FOD"**.
+3. Completar los campos principales:
+   - **Objeto** del contrato.
+   - **Ámbito** de la compra.
+   - **Cliente / Producto**.
+   - **Fecha de Inicio**, **Fecha de Entrega**, **Fecha de Terminación**.
+   - **Proveedor Condicionado** (Sí/No).
+   - **Tipo de Presupuesto** (OPEX/CAPEX).
+   - **ID Midas Aprobado**.
+   - **Proveedor Escogido** y **Justificación**.
+   - Tabla de proveedores (proveedor, cotizó, evaluación técnica, valores oferta, número contrato).
+4. Guardar el FOD.
+
+#### Resultado esperado
+
+- ✅ El FOD se guarda correctamente con todos los campos completados.
+- ✅ Al abrir nuevamente la tarea, el FOD aparece **pre-cargado** con los datos guardados.
+- ✅ El flag **"FOD Completado"** en la tarea queda en **true** (visible en el detalle de la tarea).
+
+#### Prueba de validación de fechas
+
+1. Ingresar una **Fecha de Entrega anterior a la Fecha de Inicio**.
+2. El sistema debe mostrar error: **"Fecha de Inicio debe ser anterior a Fecha de Entrega"**.
+3. Ingresar una **Fecha de Terminación anterior a la Fecha de Entrega**.
+4. El sistema debe mostrar error: **"Fecha de Entrega debe ser anterior a Fecha de Terminación"**.
+
+#### Resultado esperado
+
+- ✅ Validaciones de fecha en client-side y server-side activas.
+- ✅ No se puede guardar con fechas inválidas.
+
+#### Prueba de impresión / exportar PDF
+
+1. Con el FOD guardado, hacer clic en el botón **"Imprimir FOD"** o **"Exportar PDF"**.
+2. El navegador debe abrir el **diálogo de impresión** del sistema.
+
+#### Resultado esperado
+
+- ✅ Se abre el diálogo de impresión del navegador con el contenido del FOD.
+- ✅ Se puede guardar como PDF desde el diálogo del navegador.
+
+#### Prueba de idempotencia
+1. Intentar crear un segundo FOD para la misma tarea Kick Off.
+2. El sistema debe mostrar un error: **"Ya existe un FOD para la tarea..."**
+
+---
+
+### HU-10 — Tarea Derivada (Compra General)
+
+**Descripción:** Para las oportunidades de tipo **GENERAL**, al cerrar la **Tarea Presupuesto**, el sistema crea automáticamente la **Tarea Derivada** con los 11 campos propagados de las tareas anteriores.
+
+> **Prerequisito de datos:** Tener una oportunidad de tipo **GENERAL** con sus tareas iniciales creadas. En el Excel de demo las oportunidades de índice **impar** (`OPP-DEMO-2026-00001`, `00003`, `00005`…) son de tipo GENERAL.
+
+#### Pasos de prueba
+
+1. Ir a **Presupuesto** (http://localhost:4201/presupuesto) o a **Compras** → filtro **"Presupuesto"**.
+2. Localizar la tarea Presupuesto de una oportunidad **GENERAL** y hacer clic en **"Abrir tarea"** (URL `/presupuesto/{id}`).
+3. *(Opcional)* Añadir líneas OPEX/CAPEX y guardarlas.
+4. Hacer clic en **"Cerrar tarea Presupuesto"**.
+5. El backend crea automáticamente la **Tarea Derivada**.
+
+#### Resultado esperado
+
+- ✅ Al cerrar el Presupuesto, el sistema crea automáticamente la **Tarea Derivada**.
+- ✅ La tarea Derivada queda **asignada al rol VENDOR**.
+- ✅ Los 11 campos pre-cargados correctamente:
+  - Tipo Presupuesto (del Kick Off)
+  - Número de Contrato (del Kick Off)
+  - Proveedor (del Kick Off)
+  - PEP (del Presupuesto)
+  - Complemento GA (del OBYC)
+  - Valor Cesta COP/USD (del Kick Off)
+  - RFX (del Kick Off)
+  - Tipo de Compra = GENERAL
+  - Margen de Rentabilidad (del Kick Off)
+  - ID Materiales (del Kick Off)
+  - Comprador (del Excel)
+- ✅ Si la oportunidad es **PUNTUAL**, la Tarea Derivada **NO se crea** (flujo exclusivo de GENERAL).
+
+#### Prueba de cierre de Tarea Derivada
+
+1. Ir a **Compras** y filtrar por **"Tarea Derivada"**.
+2. Abrir la **Tarea Derivada** recién creada (URL `/compras/tarea-derivada/{id}`).
+3. Verificar que los 11 campos están pre-cargados (Tipo Presupuesto, Proveedor, PEP, Complemento GA, Valor Cesta COP/USD, etc.).
+4. Intentar cerrarla **sin ingresar** el **"Número de Derivada"** → el sistema debe bloquear el cierre.
+5. Ingresar el Número de Derivada (ej. `DER-TEST-001`) y cerrar.
+
+#### Resultado esperado
+
+- ✅ Sin Número de Derivada → error **"El campo 'Número de derivada' es obligatorio para cerrar la Tarea Derivada"**.
+- ✅ Con Número de Derivada → cierre exitoso.
+
+---
+
+### HU-17 — Tarea Presupuesto (Automática desde Excel)
+
+**Descripción:** Al procesar el Excel F1 Ganada + Liberada, el sistema también crea automáticamente la **Tarea Presupuesto** con pestañas **OPEX** y **CAPEX**, asignada al rol **Control de Gestión**.
+
+#### Pasos de prueba
+
+1. Procesar el Excel F1 Ganada (mismo proceso que HU-03/05).
+2. Buscar la tarea **"Presupuesto"** creada para la oportunidad (en la bandeja de Control de Gestión o buscando por oportunidad).
+
+#### Resultado esperado
+
+- ✅ Aparece la tarea **"Presupuesto"** asignada al rol **Control de Gestión**.
+- ✅ El tipo de presupuesto (**OPEX** / **CAPEX**) se infiere automáticamente de los valores del Excel:
+  - Solo OPEX > 0 → OPEX
+  - Solo CAPEX > 0 → CAPEX
+  - Ambos > 0 → el que tenga mayor valor
+
+#### Prueba de líneas OPEX
+
+1. Abrir la tarea Presupuesto.
+2. Ir a la pestaña **"OPEX"**.
+3. Agregar una línea con: PEP, Descripción, Presupuesto COP/Mes, Duración Meses.
+4. Los campos **Total COP** y **Total USD** deben calcularse correctamente.
+5. Guardar la línea.
+
+#### Resultado esperado
+
+- ✅ La línea OPEX se guarda y aparece en la tabla OPEX.
+- ✅ Se pueden editar líneas existentes.
+
+#### Prueba de líneas CAPEX
+
+1. Ir a la pestaña **"CAPEX"**.
+2. Agregar una línea con: Código PEP 1, Nombre PEP 2, Primera Solicitud COP/USD, Total COP/USD.
+3. Guardar la línea.
+
+#### Resultado esperado
+
+- ✅ La línea CAPEX se guarda y aparece en la tabla CAPEX.
+
+#### Prueba de cierre con trigger en cadena
+
+1. Cerrar la tarea Presupuesto (sin campo requerido especial para esta tarea).
+2. Si la oportunidad es PUNTUAL: verificar que se creó **Gestión Cesta** (ver HU-09).
+3. Si la oportunidad es GENERAL: verificar que se creó **Tarea Derivada** (ver HU-10).
+
+#### Resultado esperado
+
+- ✅ Al cerrar Presupuesto, el workflow se actualiza en la UI.
+- ✅ Se dispara la creación de la tarea encadenada correcta según el tipo de compra.
+
+---
+
+## Flujo End-to-End Completo (Compra Puntual)
+
+Para validar toda la Fase 1 de forma integral:
+
+```
+1. [Admin/PM] Workflow → "Importar Excel" → seleccionar F1_Ganada_Demo_115.xlsx → "Procesar"
+         ↓
+2. [Sistema] Crea automáticamente para cada oportunidad PUNTUAL:
+   - Tarea Gestión OBYC (padre) + hijos por proveedor   → bandeja Contabilidad
+   - Tarea Kick Off Entrega                             → bandeja PM o Planificación
+   - Tarea Presupuesto                                  → bandeja Control de Gestión
+         ↓
+3. [Contabilidad] Compras → filtro "Gestión OBYC" → "Abrir tarea"
+   URL: /compras/gestion-obyc/{id}
+   Acción: editar PxQ (Complemento GA + Cuenta Contable) → "Cerrar Tarea OBYC"
+         ↓
+4. [PM/Planificación] Compras → filtro "Kick Off Entrega" → "Abrir tarea"
+   URL: /compras/kick-off-entrega/{id}
+   Acción: completar FOD (21 campos + validaciones fecha) → guardar
+         ↓
+5. [Control de Gestión] Presupuesto → "Abrir tarea"
+   URL: /presupuesto/{id}
+   Acción: añadir líneas OPEX/CAPEX → "Cerrar tarea Presupuesto"
+         ↓
+6. [Sistema] Crea automáticamente: Tarea Gestión Cesta → asignada a VENDOR
+         ↓
+7. [Vendor] Compras → filtro "Gestión Cesta" → "Abrir tarea"
+   URL: /compras/gestion-cesta/{id}
+   Acción: verificar campos pre-cargados → ingresar Número de Cesta → "Cerrar Tarea"
+         ↓
+✅ Fase 1 completada para esta oportunidad
+```
+
+## Flujo End-to-End Completo (Compra General)
+
+```
+1. [Admin/PM] Workflow → "Importar Excel" → seleccionar F1_Ganada_Demo_115.xlsx → "Procesar"
+         ↓
+2. [Sistema] Crea: OBYC, Kick Off, Presupuesto  (oportunidades GENERAL = índices impares)
+         ↓
+3. [Control de Gestión] Presupuesto → "Abrir tarea"
+   URL: /presupuesto/{id}
+   Acción: añadir líneas → "Cerrar tarea Presupuesto"
+         ↓
+4. [Sistema] Crea automáticamente: Tarea Derivada → asignada a VENDOR
+         ↓
+5. [Vendor] Compras → filtro "Tarea Derivada" → "Abrir tarea"
+   URL: /compras/tarea-derivada/{id}
+   Acción: verificar 11 campos pre-cargados → ingresar Número de Derivada → "Cerrar Tarea"
+         ↓
+✅ Flujo General completado
+```
+
+---
+
+## Checklist de Aceptación por HU
+
+| HU | Prueba | ¿Pasa? |
+|----|--------|--------|
+| HU-03 | Tarea OBYC creada al importar Excel | ☐ |
+| HU-03 | Tareas hijas por proveedor creadas | ☐ |
+| HU-03 | Re-importar no duplica | ☐ |
+| HU-05 | Tarea Kick Off creada | ☐ |
+| HU-05 | Asignación correcta por complejidad | ☐ |
+| HU-01 | Campos ambitoCompra/tipoCompra/pep/valorTotal visibles en Cesta | ☐ |
+| HU-04 | Editar Complemento GA + Cuenta Contable en PxQ | ☐ |
+| HU-04 | Área Funcional auto-completada al ingresar cuenta contable válida | ☐ |
+| HU-09 | Gestión Cesta creada al cerrar OBYC + Presupuesto (PUNTUAL) | ☐ |
+| HU-09 | Cerrar Cesta sin Número de Cesta → ERROR | ☐ |
+| HU-09 | Cerrar Cesta con Número de Cesta → OK | ☐ |
+| HU-08 | FOD con 21 campos visible en Kick Off | ☐ |
+| HU-08 | Validación fechas (inicio < entrega < terminación) | ☐ |
+| HU-08 | Botón imprimir abre diálogo de navegador | ☐ |
+| HU-10 | Tarea Derivada creada al cerrar Presupuesto (GENERAL) | ☐ |
+| HU-10 | Cerrar Derivada sin Número de Derivada → ERROR | ☐ |
+| HU-17 | Tarea Presupuesto creada desde Excel → Control de Gestión | ☐ |
+| HU-17 | Líneas OPEX/CAPEX editables en pestañas | ☐ |
+| HU-17 | Cerrar Presupuesto dispara creación de Cesta o Derivada | ☐ |
+
+---
+
+*Documento v1.0 — Proyecto HGP B2B — Fase 1 — 06/04/2026*
