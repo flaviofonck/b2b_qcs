@@ -48,7 +48,7 @@ Fecha: 13/04/2026 · Versión 1.1
 
 ## 📊 Reportes de Bugs y Soporte
 
-### [Reporte de Tickets — 14 de Abril 2026](reportes-bugs/reporte-tickets-14-abril-2026)
+### [Reporte de Tickets — 14 de Abril 2026](reporte-tickets-14-abril-2026.md)
 **12 tickets procesados · 11 cerrados · 1 revisado**  
 Incluye fixes de: campos faltantes (FOD, Tarea Derivada), autocompletado Excel, errores OPEX/CAPEX, workflow, seeding automático, duplicidad documentos, logs de cambio de etapa, expansión RFX en vista PM.  
 Fecha: 15/04/2026
