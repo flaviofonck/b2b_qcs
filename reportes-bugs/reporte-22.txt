@@ -1,0 +1,13 @@
+=== Reporte #22 ===
+Tipo:        REPORTE_ERROR
+Estado:      CERRADO
+Usuario:     admin2
+Rol:         ADMIN
+Página:      Cronos HGP B2B
+URL:         https://b2b.fonck.app/compras/fod/3127?returnTo=%2Fcompras%2Fkick-off-entrega%2F3127
+Fecha:       2026-04-14T11:35:13
+Descripción:
+Debe traer (autocompletarse) datos de Excel según HU 8.
+
+Respuesta:
+Fix: nuevo endpoint GET /api/fod/tarea/{tareaId}/prefill que lee los campos Excel almacenados en OPP_OPPORTUNITY y los mapea a FodDTO. El frontend ahora llama a este endpoint cuando no existe FOD previo y pre-rellena el formulario. Verificado: campos Objeto, Ambito, Cliente/Producto, Proveedor Condicionado, Naturaleza Juridica, ID Midas e idMidasAprobado se autocompleutan correctamente desde los datos del Excel.

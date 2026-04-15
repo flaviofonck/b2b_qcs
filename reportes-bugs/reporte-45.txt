@@ -1,0 +1,13 @@
+=== Reporte #45 ===
+Tipo:        REPORTE_ERROR
+Estado:      CERRADO
+Usuario:     pm
+Rol:         PM
+Página:      Cronos HGP B2B
+URL:         https://b2b.fonck.app/workflow/OPP-FULL-2026-VAL-01
+Fecha:       2026-04-14T15:21:23
+Descripción:
+Para oportunidad OPP-FULL-2026-VAL-01, se cierra tarea de cesta y se coloca en verde etapa de crear cesta pero no se coloca en verde etapa de cesta liberada.
+
+Respuesta:
+Fix aplicado: mapearNumeroEtapaAValidationId() no mapeaba la etapa 6 (Cesta Liberada) para compra puntual — el case 6 faltaba en el switch de TipoCompra.PUNTUAL, por lo que la etapa siempre quedaba en null y se forzaba a PENDIENTE/GRIS. Se añadió case 6 -> 5 para que Cesta Liberada consulte la misma tarea Gestión Cesta (validationId=5) que Crear Cesta, quedando ambas etapas en VERDE al cerrarse dicha tarea.

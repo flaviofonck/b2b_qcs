@@ -1,0 +1,13 @@
+=== Reporte #42 ===
+Tipo:        REPORTE_ERROR
+Estado:      CERRADO
+Usuario:     pm
+Rol:         PM
+Página:      Cronos HGP B2B
+URL:         https://b2b.fonck.app/workflow
+Fecha:       2026-04-14T15:06:08
+Descripción:
+En la vista general, para la oportunidad OPP-DEMO-2026-00002, no aparecen los dos RFX, pero sí aparecen al darle a Gestionar tarea.
+
+Respuesta:
+Fix aplicado: expandirPorOrdenes() en WorkflowService ahora expande por RFX de líneas PxQ de la tarea OBYC cuando la oportunidad no tiene OCs registradas. Para OPP-DEMO-2026-00002 el servicio detecta 2 RFX distintos (RFX-DEMO-2026-0003 y RFX-DEMO-2026-0004) en TK_PXQ_LINE y genera 2 filas en la vista general del PM, coincidiendo con lo visible al gestionar la tarea.

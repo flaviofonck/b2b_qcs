@@ -1,0 +1,13 @@
+=== Reporte #28 ===
+Tipo:        REPORTE_ERROR
+Estado:      CERRADO
+Usuario:     Control_de_Gestion
+Rol:         CONTROL_GESTION
+Página:      Cronos HGP B2B
+URL:         https://b2b.fonck.app/presupuesto/3119
+Fecha:       2026-04-14T12:39:25
+Descripción:
+La Tarea en asignada debe decir que esta asignada a Control de Gestión.
+
+Respuesta:
+Se añadió la línea 'Asignado a: <nombre>' en la cabecera de la Tarea Presupuesto. El campo assignedToNombre ya venía en el DTO pero no se mostraba en el template HTML.

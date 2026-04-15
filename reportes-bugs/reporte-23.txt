@@ -1,0 +1,13 @@
+=== Reporte #23 ===
+Tipo:        REPORTE_ERROR
+Estado:      CERRADO
+Usuario:     admin2
+Rol:         ADMIN
+Página:      Cronos HGP B2B
+URL:         https://b2b.fonck.app/presupuesto/3115
+Fecha:       2026-04-14T11:50:49
+Descripción:
+Error al guardar la línea opex agregada, no funciona el botón de guardar.
+
+Respuesta:
+Fix: @JoinColumn(name='task_id') corregido a 'tarea_id' en PresupuestoOpex.java y PresupuestoCapex.java. La migración Flyway V5 creaba las tablas con columna tarea_id pero las entidades JPA usaban task_id, bloqueando todas las operaciones OPEX/CAPEX. Se mejoró también el error handler del frontend para mostrar el mensaje real del backend.

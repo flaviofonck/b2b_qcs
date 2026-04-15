@@ -1,0 +1,13 @@
+=== Reporte #27 ===
+Tipo:        REPORTE_ERROR
+Estado:      CERRADO
+Usuario:     vendor
+Rol:         VENDOR
+Página:      Cronos HGP B2B
+URL:         https://b2b.fonck.app/compras/tarea-derivada/3130
+Fecha:       2026-04-14T12:23:06
+Descripción:
+Se presentó error al cerrar derivada de oportunidad OPP-DEMO-2026-00099, Dato ingresado: DER-2025-0000002
+
+Respuesta:
+Fix aplicado: el método cerrarTarea() ahora persiste el campo numeroDerivada vía PATCH /campos-compras antes de llamar a POST /cerrar, resolviendo el error 500 que ocurría cuando el usuario cerraba sin pulsar Guardar previamente.

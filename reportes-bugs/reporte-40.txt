@@ -1,0 +1,13 @@
+=== Reporte #40 ===
+Tipo:        REPORTE_ERROR
+Estado:      CERRADO
+Usuario:     admin2
+Rol:         ADMIN
+Página:      Cronos HGP B2B
+URL:         https://b2b.fonck.app/workflow/OPP-DEMO-2026-00098
+Fecha:       2026-04-14T15:00:55
+Descripción:
+Se cerró tarea presupuesto de oportunidad OPP-DEMO-2026-00098 pero al descargar el reporte de logs de cambio de etapa no se muestra la información. La funcionalidad esta ok ya que descarga el Excel, pero el Excel viene vacío.
+
+Respuesta:
+Fix aplicado: el método refrescarEtapasDesdeTareas() en WorkflowService no registraba las transiciones automáticas de etapa en WF_ETAPA_LOG. Solo avanzarEtapaManual() escribía en esa tabla. Se añadió lógica para detectar cambios de estado en cada etapa y persistir un WorkflowEtapaLog por cada transición automática, usando el mapa prevEstadoPorEtapa ya existente. Ahora al cerrar una tarea (presupuesto, OBYC, etc.) el log de cambio de etapa se registra correctamente y el Excel del reporte muestra los datos.

@@ -1,0 +1,13 @@
+=== Reporte #36 ===
+Tipo:        REPORTE_ERROR
+Estado:      REVISADO
+Usuario:     comprador
+Rol:         COMPRADOR
+Página:      Cronos HGP B2B
+URL:         https://b2b.fonck.app/workflow/COL-004068960
+Fecha:       2026-04-14T14:35:33
+Descripción:
+Prueba exitosa del workflow para compra general de 6 etapas. COL-004068960.
+
+Respuesta:
+¿Esto es un soporte?

@@ -1,0 +1,13 @@
+=== Reporte #29 ===
+Tipo:        REPORTE_ERROR
+Estado:      CERRADO
+Usuario:     Control_de_Gestion
+Rol:         CONTROL_GESTION
+Página:      Cronos HGP B2B
+URL:         https://b2b.fonck.app/presupuesto/2725
+Fecha:       2026-04-14T12:44:50
+Descripción:
+Para la oportunidad OPP-DEMO-2026-00003, tanto el opex como el capex debería estar diligenciado según Excel, de acuerdo a HU 17.
+
+Respuesta:
+Se implementó el seeding automático de líneas OPEX/CAPEX en la Tarea Presupuesto al procesar el Excel F1 Ganada. El motor de reglas ahora crea los registros en TK_PRESUPUESTO_OPEX y TK_PRESUPUESTO_CAPEX con los valores de las columnas N y O del Excel (idempotente: no sobreescribe si ya hay líneas manuales).

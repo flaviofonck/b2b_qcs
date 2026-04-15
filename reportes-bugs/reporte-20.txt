@@ -1,0 +1,19 @@
+=== Reporte #20 ===
+Tipo:        REPORTE_ERROR
+Estado:      CERRADO
+Usuario:     admin2
+Rol:         ADMIN
+Página:      Cronos HGP B2B
+URL:         https://b2b.fonck.app/compras/fod/3127?returnTo=%2Fcompras%2Fkick-off-entrega%2F3127
+Fecha:       2026-04-14T11:26:28
+Descripción:
+Al formato de FOD le faltan los campos según HU 8: Cotizó: Si / No
+Evaluación Técnica: Cumple / No Cumple
+Valor Oferta Inicial
+Valor Oferta Final
+Número de contrato (Si es derivado de compra general)
+ID del Midas Aprobado
+Fecha de FOD
+
+Respuesta:
+Fix aplicado: se agregó visibilidad del campo Fecha de FOD (campo 21 HU-08) y se modificó la tabla de proveedores para mostrar estructura visible incluso cuando está vacía con mensaje guiado. Verificado: ID Midas Aprobado, Fecha FOD, Cotizó, Evaluación Técnica, Valor Oferta Inicial/Final y N° Contrato ahora son visibles y funcionales según HU-08.

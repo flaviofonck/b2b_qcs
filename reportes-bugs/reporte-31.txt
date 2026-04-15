@@ -1,0 +1,13 @@
+=== Reporte #31 ===
+Tipo:        REPORTE_ERROR
+Estado:      CERRADO
+Usuario:     Control_de_Gestion
+Rol:         CONTROL_GESTION
+Página:      Cronos HGP B2B
+URL:         https://b2b.fonck.app/repositorio/OPP-GEN-2026-VAL-01
+Fecha:       2026-04-14T12:56:45
+Descripción:
+Esta cargando dos veces el documento, es decir, crea dos registros de cargue. OPP-GEN-2026-VAL-01
+
+Respuesta:
+Fix aplicado: se añadió flag isUploading en DocumentosAdjuntosComponent para deshabilitar el botón 'Subir' mientras la petición HTTP está en vuelo, previniendo doble clic y la creación de registros duplicados.

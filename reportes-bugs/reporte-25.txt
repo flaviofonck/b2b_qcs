@@ -1,0 +1,22 @@
+=== Reporte #25 ===
+Tipo:        REPORTE_ERROR
+Estado:      CERRADO
+Usuario:     vendor
+Rol:         VENDOR
+Página:      Cronos HGP B2B
+URL:         https://b2b.fonck.app/compras/tarea-derivada/3130
+Fecha:       2026-04-14T12:00:09
+Descripción:
+Falta los campos y completarlos desde origen: 
+•	Tipo Presupuesto, (desde Tarea Kick Off de Entrega).
+•	Número de contrato, (desde Tarea Kick Off de Entrega).
+•	Complemento (desde tarea gestión OBYC).
+•	Valor cesta (COP/USD),  (desde Tarea Kick Off de Entrega).
+•	RFX, (desde Tarea Kick Off de Entrega).
+•	Comprador, (desde Excel).
+•	ID materiales, (desde Excel cuando aplique).
+•	Margen de Rentabilidad, (desde Tarea Kick Off de Entrega).
+•	Tipo de Compra = General (desde Tarea Kick Off Entrega).
+
+Respuesta:
+Se añadieron los 9 campos propagados faltantes en la Tarea Derivada: tipoPresupuesto, numeroContrato, complementoGa, valorCestaCop/Usd, rfx, comprador, margenRentabilidad, idMateriales, tipoCompra. Se corrigió también la omisión del campo idMateriales del TareaDTO (backend).
