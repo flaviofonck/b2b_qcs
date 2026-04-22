@@ -46,6 +46,14 @@ Fecha: 13/04/2026 · Versión 1.1
 
 ---
 
+### 📋 [Guía de Pruebas — Fase 3](Guia_Pruebas_Fase3_Cliente)
+**Sprints 6, 7 y 8 · GAP-ADM-01 a GAP-ADM-05 + EVL-01**  
+Cubre los gaps: GAP-ADM-01, GAP-ADM-02, GAP-ADM-03, GAP-ADM-04, GAP-ADM-05  
+Módulos: Administración de Usuarios · Bug Reports · Órdenes de Compra · Validación On-Premise  
+Fecha: 20/04/2026 · Versión 1.2
+
+---
+
 ## 📊 Reportes de Bugs y Soporte
 
 ### [Reporte de Tickets — 14 de Abril 2026](reporte-tickets-14-abril-2026.md)
